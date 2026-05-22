@@ -2,7 +2,7 @@
 
 A modular, production-ready issue-tracking REST API built with Node.js, TypeScript, Express, and PostgreSQL.
 
-**Live URL:** `https://devpulse-api.vercel.app` *(update after deployment)*
+**Live URL:** `https://devpulse-api-1e9l.onrender.com/health`
 
 ---
 
@@ -10,8 +10,10 @@ A modular, production-ready issue-tracking REST API built with Node.js, TypeScri
 
 - JWT-based authentication with role-based access control (`contributor` / `maintainer`)
 - Full issue lifecycle management (create, read, update, delete)
+- Maintainer can change issue workflow status independently
 - Dynamic filtering and sorting for issue lists
-- Raw SQL via `pg` — no ORMs, no query builders
+- Internal system metrics endpoint for maintainers
+- Raw SQL via `pg` — no ORMs, no query builders, no SQL JOINs
 - Strict TypeScript — zero `any` types
 - Modular architecture: clean separation of routes, controllers, utils, middleware
 - DRY helpers for responses, validation, and SQL queries
@@ -24,25 +26,26 @@ A modular, production-ready issue-tracking REST API built with Node.js, TypeScri
 
 | Layer | Technology |
 |-------|------------|
-| Runtime | Node.js 24 (LTS) |
+| Runtime | Node.js 20 (LTS) |
 | Language | TypeScript 5 |
 | Framework | Express.js |
-| Database | PostgreSQL (NeonDB / Supabase / ElephantSQL) |
-| Auth | jsonwebtoken + bcrypt |
+| Database | PostgreSQL (NeonDB) |
+| Auth | jsonwebtoken + bcrypt (salt rounds: 10) |
 | Status codes | http-status-codes |
+| Deployment | Render |
 
 ---
 
 ## Setup
 
 ### Prerequisites
-- Node.js 24+
+- Node.js 20+
 - A PostgreSQL database (NeonDB recommended for free tier)
 
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/devpulse-api.git
+git clone https://github.com/pritom00/devpulse-api.git
 cd devpulse-api
 npm install
 ```
@@ -92,7 +95,19 @@ npm start        # run compiled output
 | PATCH | `/api/issues/:id` | Authenticated* | Update an issue |
 | DELETE | `/api/issues/:id` | Maintainer only | Delete an issue |
 
-> *Contributors can only edit their own issues when status is `open`. Maintainers can edit any issue.
+### Admin
+
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/admin/metrics` | Maintainer only | Get system metrics |
+
+> *Contributors can only edit their own issues when status is `open`. Maintainers can edit any issue and change workflow status.
+
+### Authorization Header Format
+
+```
+Authorization: <JWT_TOKEN>
+```
 
 ### Query Parameters for `GET /api/issues`
 
@@ -101,12 +116,6 @@ npm start        # run compiled output
 | `sort` | `newest`, `oldest` | `newest` |
 | `type` | `bug`, `feature_request` | — |
 | `status` | `open`, `in_progress`, `resolved` | — |
-
-### Authorization Header Format
-
-```
-Authorization: <JWT_TOKEN>
-```
 
 ---
 
@@ -139,20 +148,49 @@ Authorization: <JWT_TOKEN>
 
 ---
 
-## Deployment
+## User Roles & Permissions
 
-### Vercel
+| Role | Permissions |
+|------|-------------|
+| `contributor` | Register, login, create issues, view all issues, update own open issues |
+| `maintainer` | All contributor permissions + update any issue, change status, delete issues, view metrics |
 
-```bash
-npm install -g vercel
-vercel --prod
+---
+
+## Response Format
+
+### Success
+```json
+{
+  "success": true,
+  "message": "Operation description",
+  "data": {}
+}
 ```
 
-Set all environment variables in the Vercel dashboard under **Settings → Environment Variables**.
+### Error
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "errors": []
+}
+```
 
-### Render / Railway
+---
 
-Point the start command to `npm start` and set environment variables in the platform dashboard.
+## HTTP Status Codes
+
+| Code | Usage |
+|------|-------|
+| `200` | Successful GET, PATCH, DELETE |
+| `201` | Successful POST (resource created) |
+| `400` | Validation errors, invalid input |
+| `401` | Missing, expired, or invalid JWT |
+| `403` | Valid token but insufficient permissions |
+| `404` | Resource not found |
+| `409` | Business logic conflict |
+| `500` | Unexpected server error |
 
 ---
 
@@ -168,6 +206,9 @@ src/
 │   ├── auth.ts           # authenticate + authorize middleware
 │   └── errorHandler.ts   # global error handler
 ├── modules/
+│   ├── admin/
+│   │   ├── admin.controller.ts
+│   │   └── admin.routes.ts
 │   ├── auth/
 │   │   ├── auth.controller.ts
 │   │   └── auth.routes.ts
@@ -182,3 +223,17 @@ src/
 ├── app.ts                # Express app factory
 └── index.ts              # server entry point
 ```
+
+---
+
+## Deployment
+
+Deployed on **Render** with **NeonDB** (PostgreSQL).
+
+### Render Setup
+- Build Command: `npm install && npm run build`
+- Start Command: `npm start`
+- Environment: All variables configured in Render dashboard
+
+### Redeploy
+Push to `main` branch — Render auto-deploys on every push.
