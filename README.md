@@ -2,7 +2,7 @@
 
 A modular, production-ready issue-tracking REST API built with Node.js, TypeScript, Express, and PostgreSQL.
 
-**Live URL:** `https://devpulse-api-1e9l.onrender.com/health`
+**Live URL: - `https://devpulse-api-1e9l.onrender.com/health`
 
 ---
 
