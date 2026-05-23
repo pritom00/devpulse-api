@@ -4,6 +4,8 @@ A modular, production-ready issue-tracking REST API built with Node.js, TypeScri
 
 **Live URL: - `https://devpulse-api-1e9l.onrender.com/health`
 
+**Note:** Deployed on Render free tier. The server may take **30–60 seconds** to respond on the first request after a period of inactivity (cold start). Subsequent requests will be fast. Please wait for the initial response before testing endpoints.
+
 ---
 
 ## Features
