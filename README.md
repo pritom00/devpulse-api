@@ -26,7 +26,7 @@ A modular, production-ready issue-tracking REST API built with Node.js, TypeScri
 
 | Layer | Technology |
 |-------|------------|
-| Runtime | Node.js 20 (LTS) |
+| Runtime | Node.js v24.16.0(LTS) |
 | Language | TypeScript 5 |
 | Framework | Express.js |
 | Database | PostgreSQL (NeonDB) |
